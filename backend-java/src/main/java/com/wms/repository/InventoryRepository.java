@@ -1,14 +1,18 @@
 package com.wms.repository;
 
+import com.wms.dto.InventoryResponse;
 import com.wms.entity.Inventory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 /**
- * 库存 Repository — 候选人需要实现库存查询（任务2）
- * 提示：你可能需要添加自定义查询方法
+ * 库存 Repository
  */
 @Repository
 public interface InventoryRepository extends JpaRepository<Inventory, Long> {
@@ -17,5 +21,23 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
 
     boolean existsByProductId(Long productId);
 
-    // 库存查询的 JOIN 分页查询见服务层实现（InventoryService.queryInventory）
+    /**
+     * 库存查询：单条 JOIN 查询一次带出商品名/SKU/仓库名，避免 N+1；支持模糊搜索、仓库筛选、分页
+     */
+    @Query(value = "SELECT NEW com.wms.dto.InventoryResponse(i.productId, p.name, p.sku, i.locationCode, w.name, i.quantity, i.updatedAt) " +
+            "FROM Inventory i " +
+            "JOIN Product p ON p.id = i.productId " +
+            "JOIN Location l ON l.code = i.locationCode " +
+            "JOIN Warehouse w ON w.id = l.warehouseId " +
+            "WHERE (:keyword IS NULL OR p.name LIKE %:keyword% OR p.sku LIKE %:keyword%) " +
+            "AND (:warehouseId IS NULL OR l.warehouseId = :warehouseId)",
+            countQuery = "SELECT COUNT(i) FROM Inventory i " +
+                    "JOIN Product p ON p.id = i.productId " +
+                    "JOIN Location l ON l.code = i.locationCode " +
+                    "JOIN Warehouse w ON w.id = l.warehouseId " +
+                    "WHERE (:keyword IS NULL OR p.name LIKE %:keyword% OR p.sku LIKE %:keyword%) " +
+                    "AND (:warehouseId IS NULL OR l.warehouseId = :warehouseId)")
+    Page<InventoryResponse> queryInventory(@Param("keyword") String keyword,
+                                           @Param("warehouseId") Long warehouseId,
+                                           Pageable pageable);
 }

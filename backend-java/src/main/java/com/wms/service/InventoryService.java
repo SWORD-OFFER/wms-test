@@ -1,6 +1,7 @@
 package com.wms.service;
 
 import com.wms.common.BusinessException;
+import com.wms.common.PageResult;
 import com.wms.dto.InboundOrderCreateRequest;
 import com.wms.dto.InboundOrderCreateResponse;
 import com.wms.dto.InboundOrderCreateResponse.InboundItemResponse;
@@ -16,6 +17,8 @@ import com.wms.repository.LocationRepository;
 import com.wms.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -110,11 +113,12 @@ public class InventoryService {
     }
 
     /**
-     * 库存查询 — 见任务2实现
+     * 库存查询：按商品名/SKU 模糊搜索 + 仓库筛选 + 分页
      */
-    public List<InventoryResponse> queryInventory(String keyword, Long warehouseId,
-                                                   int page, int pageSize) {
-        // TODO: 候选人实现（Phase 2）
-        throw new UnsupportedOperationException("请实现库存查询功能（任务2）");
+    public PageResult<InventoryResponse> queryInventory(String keyword, Long warehouseId,
+                                                         int page, int pageSize) {
+        PageRequest pageRequest = PageRequest.of(page - 1, pageSize);
+        Page<InventoryResponse> result = inventoryRepository.queryInventory(keyword, warehouseId, pageRequest);
+        return new PageResult<>(result.getContent(), result.getTotalElements(), page, pageSize);
     }
 }

@@ -1,6 +1,7 @@
 package com.wms.controller;
 
 import com.wms.common.ApiResponse;
+import com.wms.common.PageResult;
 import com.wms.dto.InboundOrderCreateRequest;
 import com.wms.dto.InboundOrderCreateResponse;
 import com.wms.dto.InventoryResponse;
@@ -9,18 +10,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 /**
- * ============================================
- *  候选人需要实现以下接口：
- * ============================================
- *
- * POST /api/inbound-orders         — 创建入库单（任务1）
- * GET  /api/inventory              — 库存查询（任务2）
- *
- * 候选人在 InventoryService 中实现业务逻辑后，
- * 在此 Controller 中补全对应的接口方法。
+ * 库存 & 入库 Controller
  */
 @RestController
 @RequestMapping("/api")
@@ -38,15 +29,14 @@ public class InventoryController {
     }
 
     /**
-     * 库存查询 — 候选人实现
+     * 库存查询
      */
     @GetMapping("/inventory")
-    public ApiResponse<List<InventoryResponse>> queryInventory(
+    public ApiResponse<PageResult<InventoryResponse>> queryInventory(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long warehouseId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int pageSize) {
-        // TODO: 调用 inventoryService.queryInventory(...)
-        return ApiResponse.error(501, "请实现库存查询功能（任务2）");
+        return ApiResponse.success(inventoryService.queryInventory(keyword, warehouseId, page, pageSize));
     }
 }
