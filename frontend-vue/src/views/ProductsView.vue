@@ -72,8 +72,7 @@ const handleSubmit = async () => {
       ElMessage.success('创建成功')
     }
     dialogVisible.value = false
-    // ️ BUG: 编辑后不保留当前页码
-    currentPage.value = 1
+    // 修复 Bug2：编辑后保留当前页码，不再重置到第 1 页
     await loadProducts()
   } catch (e: any) {
     ElMessage.error(e.response?.data?.message || '操作失败')
