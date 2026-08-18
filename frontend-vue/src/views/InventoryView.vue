@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { getInventory, getWarehouses, type Warehouse, type InventoryItem } from '@/api'
+import { isLowStock } from '@/utils/inventory'
 
 const keyword = ref('')
 const warehouseId = ref<number | undefined>()
@@ -50,7 +51,7 @@ const onWarehouseChange = () => {
 
 // 低库存（<10）行高亮为红色
 const getRowStyle = ({ row }: { row: InventoryItem }) => {
-  if (row.quantity < 10) {
+  if (isLowStock(row.quantity)) {
     return { color: '#f56c6c', fontWeight: 'bold' as const }
   }
   return {}
