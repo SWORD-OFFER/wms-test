@@ -5,6 +5,8 @@ import com.wms.common.PageResult;
 import com.wms.dto.InboundOrderCreateRequest;
 import com.wms.dto.InboundOrderCreateResponse;
 import com.wms.dto.InventoryResponse;
+import com.wms.dto.OutboundOrderCreateRequest;
+import com.wms.dto.OutboundOrderCreateResponse;
 import com.wms.service.InventoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,14 @@ public class InventoryController {
     @PostMapping("/inbound-orders")
     public ApiResponse<InboundOrderCreateResponse> createInboundOrder(@Valid @RequestBody InboundOrderCreateRequest request) {
         return ApiResponse.created("入库单创建成功", inventoryService.createInboundOrder(request));
+    }
+
+    /**
+     * 创建出库单（选做 A）
+     */
+    @PostMapping("/outbound-orders")
+    public ApiResponse<OutboundOrderCreateResponse> createOutboundOrder(@Valid @RequestBody OutboundOrderCreateRequest request) {
+        return ApiResponse.created("出库单创建成功", inventoryService.createOutboundOrder(request));
     }
 
     /**
