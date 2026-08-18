@@ -2,6 +2,7 @@ package com.wms.controller;
 
 import com.wms.common.ApiResponse;
 import com.wms.dto.InboundOrderCreateRequest;
+import com.wms.dto.InboundOrderCreateResponse;
 import com.wms.dto.InventoryResponse;
 import com.wms.service.InventoryService;
 import jakarta.validation.Valid;
@@ -29,12 +30,11 @@ public class InventoryController {
     private final InventoryService inventoryService;
 
     /**
-     * 创建入库单 — 候选人实现
+     * 创建入库单
      */
     @PostMapping("/inbound-orders")
-    public ApiResponse<?> createInboundOrder(@Valid @RequestBody InboundOrderCreateRequest request) {
-        // TODO: 调用 inventoryService.createInboundOrder(request)
-        return ApiResponse.error(501, "请实现入库单创建功能（任务1）");
+    public ApiResponse<InboundOrderCreateResponse> createInboundOrder(@Valid @RequestBody InboundOrderCreateRequest request) {
+        return ApiResponse.created("入库单创建成功", inventoryService.createInboundOrder(request));
     }
 
     /**

@@ -15,6 +15,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
 
     Optional<Inventory> findByProductIdAndLocationCode(Long productId, String locationCode);
 
-    // TODO: 候选人添加自定义查询方法，支持按 product/sku/location 筛选和分页
-    // 提示：可以使用 @Query 写 JPQL，或使用 Specification 动态查询
+    boolean existsByProductId(Long productId);
+
+    // 库存查询的 JOIN 分页查询见服务层实现（InventoryService.queryInventory）
 }

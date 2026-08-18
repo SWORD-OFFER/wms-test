@@ -20,6 +20,10 @@ public class ApiResponse<T> {
         return new ApiResponse<>(200, message, data);
     }
 
+    public static <T> ApiResponse<T> created(String message, T data) {
+        return new ApiResponse<>(201, message, data);
+    }
+
     public static <T> ApiResponse<T> error(int code, String message) {
         return new ApiResponse<>(code, message, null);
     }
