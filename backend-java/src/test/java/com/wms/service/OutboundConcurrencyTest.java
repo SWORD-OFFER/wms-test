@@ -4,6 +4,7 @@ import com.wms.common.BusinessException;
 import com.wms.dto.OutboundOrderCreateRequest;
 import com.wms.entity.Inventory;
 import com.wms.repository.InventoryRepository;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -42,7 +43,8 @@ class OutboundConcurrencyTest {
     }
 
     @Test
-    void 并发扣减_不超卖() throws InterruptedException {
+    @DisplayName("并发扣减不超卖")
+    void shouldNotOversellUnderConcurrency() throws InterruptedException {
         // 造一块独立库存（50 件）用于压测，不污染其他用例数据
         final int initial = 50;
         inventoryRepository.save(Inventory.builder()

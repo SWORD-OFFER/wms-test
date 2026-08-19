@@ -2,6 +2,7 @@ package com.wms.service;
 
 import com.wms.common.PageResult;
 import com.wms.dto.InventoryResponse;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,7 +20,8 @@ class InventoryQueryServiceTest {
     private InventoryQueryService inventoryQueryService;
 
     @Test
-    void queryInventory_关键词命中() {
+    @DisplayName("关键词命中")
+    void shouldMatchByKeyword() {
         PageResult<InventoryResponse> result = inventoryQueryService.queryInventory("蓝牙", null, 1, 100);
         assertTrue(result.getTotal() > 0);
         assertTrue(result.getList().stream()
@@ -27,20 +29,23 @@ class InventoryQueryServiceTest {
     }
 
     @Test
-    void queryInventory_关键词未命中() {
+    @DisplayName("关键词未命中")
+    void shouldReturnEmptyWhenKeywordNoMatch() {
         PageResult<InventoryResponse> result = inventoryQueryService.queryInventory("不存在的商品XYZ", null, 1, 20);
         assertEquals(0, result.getTotal());
     }
 
     @Test
-    void queryInventory_仓库筛选_仅返回该仓库数据() {
+    @DisplayName("按仓库筛选：仅返回该仓库数据")
+    void shouldFilterByWarehouse() {
         PageResult<InventoryResponse> result = inventoryQueryService.queryInventory(null, 1L, 1, 100);
         assertTrue(result.getTotal() > 0);
         assertTrue(result.getList().stream().allMatch(r -> "广州主仓".equals(r.getWarehouseName())));
     }
 
     @Test
-    void queryInventory_分页_总数一致且不超页大小() {
+    @DisplayName("分页：总数一致且不超页大小")
+    void shouldPaginateCorrectly() {
         PageResult<InventoryResponse> full = inventoryQueryService.queryInventory(null, null, 1, 100);
         PageResult<InventoryResponse> paged = inventoryQueryService.queryInventory(null, null, 1, 2);
 

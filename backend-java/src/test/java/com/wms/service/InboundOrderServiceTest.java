@@ -6,6 +6,7 @@ import com.wms.dto.InboundOrderCreateRequest.InboundItemRequest;
 import com.wms.dto.InboundOrderCreateResponse;
 import com.wms.entity.Inventory;
 import com.wms.repository.InventoryRepository;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -40,7 +41,8 @@ class InboundOrderServiceTest {
     }
 
     @Test
-    void createInboundOrder_正常入库_库存累加且单号合规() {
+    @DisplayName("正常入库：库存累加且单号合规")
+    void shouldIncrementStockAndGenerateValidOrderNo() {
         // product 5（屏幕保护膜）在种子数据中无库存，结果确定
         InboundOrderCreateResponse response = inboundOrderService.createInboundOrder(
                 buildRequest(5L, 7, "WH-B-01-01"));
@@ -54,7 +56,8 @@ class InboundOrderServiceTest {
     }
 
     @Test
-    void createInboundOrder_库位不存在_整个事务回滚库存不变() {
+    @DisplayName("库位不存在：整个事务回滚，库存不变")
+    void shouldRollbackStockChangeWhenLocationNotExist() {
         // 第一行有效（先累加库存），第二行库位不存在 → 事务整体回滚
         Inventory before = inventoryRepository.findByProductIdAndLocationCode(3L, "WH-A-01-02").orElseThrow();
         int qtyBefore = before.getQuantity();
@@ -78,7 +81,8 @@ class InboundOrderServiceTest {
     }
 
     @Test
-    void createInboundOrder_商品不存在_抛业务异常() {
+    @DisplayName("商品不存在：抛业务异常")
+    void shouldThrowWhenProductNotExist() {
         assertThrows(BusinessException.class,
                 () -> inboundOrderService.createInboundOrder(buildRequest(999L, 1, "WH-A-01-01")));
     }

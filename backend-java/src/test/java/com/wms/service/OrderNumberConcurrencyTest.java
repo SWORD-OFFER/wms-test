@@ -4,6 +4,7 @@ import com.wms.common.BusinessException;
 import com.wms.dto.OutboundOrderCreateRequest;
 import com.wms.entity.Inventory;
 import com.wms.repository.InventoryRepository;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -34,7 +35,8 @@ class OrderNumberConcurrencyTest {
     private InventoryRepository inventoryRepository;
 
     @Test
-    void 并发创建出库单_单号冲突被重试解决() throws Exception {
+    @DisplayName("并发创建出库单：单号冲突被重试解决")
+    void shouldResolveOrderNoConflictsByRetry() throws Exception {
         final int threads = 10;
         // 每个线程一个独立库存行（数量 1），避免库存行锁竞争，只竞争单号
         for (int i = 0; i < threads; i++) {

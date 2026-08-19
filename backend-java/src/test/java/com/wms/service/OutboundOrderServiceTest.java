@@ -4,6 +4,7 @@ import com.wms.common.BusinessException;
 import com.wms.dto.OutboundOrderCreateRequest;
 import com.wms.dto.OutboundOrderCreateResponse;
 import com.wms.repository.InventoryRepository;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -38,7 +39,8 @@ class OutboundOrderServiceTest {
     }
 
     @Test
-    void createOutboundOrder_正常扣减_单号合规() {
+    @DisplayName("正常出库：库存扣减且单号合规")
+    void shouldDeductStockAndGenerateValidOrderNo() {
         int before = inventoryRepository.findByProductIdAndLocationCode(2L, "WH-A-01-01").orElseThrow().getQuantity();
 
         OutboundOrderCreateResponse response = outboundOrderService.createOutboundOrder(buildRequest(2L, 10, "WH-A-01-01"));
@@ -50,7 +52,8 @@ class OutboundOrderServiceTest {
     }
 
     @Test
-    void createOutboundOrder_库存不足_抛异常且库存不变() {
+    @DisplayName("库存不足：抛异常且库存不变")
+    void shouldThrowAndKeepStockWhenInsufficient() {
         int before = inventoryRepository.findByProductIdAndLocationCode(3L, "WH-A-01-02").orElseThrow().getQuantity();
 
         assertThrows(BusinessException.class,
@@ -61,7 +64,8 @@ class OutboundOrderServiceTest {
     }
 
     @Test
-    void createOutboundOrder_库存记录不存在_抛异常() {
+    @DisplayName("库存记录不存在：抛异常")
+    void shouldThrowWhenInventoryMissing() {
         assertThrows(BusinessException.class,
                 () -> outboundOrderService.createOutboundOrder(buildRequest(5L, 1, "WH-A-01-01")));
     }
