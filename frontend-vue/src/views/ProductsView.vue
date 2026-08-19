@@ -83,11 +83,16 @@ const handleSubmit = async () => {
 const handleDelete = async (id: number) => {
   try {
     await ElMessageBox.confirm('确定删除该商品吗？', '确认删除', { type: 'warning' })
+  } catch {
+    return // 用户取消
+  }
+  try {
     await deleteProduct(id)
     ElMessage.success('删除成功')
     await loadProducts()
-  } catch {
-    // 取消
+  } catch (e: any) {
+    // 修复：删除失败需提示后端错误（如"该商品存在关联库存"），不再静默吞掉
+    ElMessage.error(e.response?.data?.message || '删除失败')
   }
 }
 </script>
