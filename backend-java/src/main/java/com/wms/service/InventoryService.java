@@ -24,15 +24,17 @@ import com.wms.repository.OutboundOrderRepository;
 import com.wms.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * 库存 & 入库业务逻辑
@@ -49,13 +51,37 @@ public class InventoryService {
     private final OutboundOrderItemRepository outboundOrderItemRepository;
     private final ProductRepository productRepository;
     private final LocationRepository locationRepository;
+    private final TransactionTemplate transactionTemplate;
+
+    private static final int MAX_ORDER_NO_RETRY = 20;
 
     /**
      * 入库单创建
-     * 事务保证：入库单主表 + 明细 + 库存累加 要么全部成功，要么全部回滚
+     * 事务保证：入库单主表 + 明细 + 库存累加 要么全部成功，要么全部回滚。
+     * 并发修复：count+1 生成单号在真并发下会撞唯一约束，冲突时整体重试（新事务重新取号），而非直接失败。
      */
-    @Transactional
     public InboundOrderCreateResponse createInboundOrder(InboundOrderCreateRequest request) {
+        return withOrderNoRetry("创建入库单", () -> doCreateInboundOrder(request));
+    }
+
+    /**
+     * 单号冲突重试：每次尝试在独立事务中执行，撞唯一约束则重试取下一个序号
+     */
+    private <T> T withOrderNoRetry(String action, Supplier<T> supplier) {
+        for (int attempt = 1; ; attempt++) {
+            try {
+                return transactionTemplate.execute(status -> supplier.get());
+            } catch (DataIntegrityViolationException e) {
+                if (attempt >= MAX_ORDER_NO_RETRY) {
+                    log.error("{}, 重试 {} 次后仍单号冲突", action, attempt);
+                    throw new BusinessException(action + "失败：单号冲突，请重试");
+                }
+                log.warn("{}, 单号冲突，重试第 {} 次", action, attempt + 1);
+            }
+        }
+    }
+
+    private InboundOrderCreateResponse doCreateInboundOrder(InboundOrderCreateRequest request) {
         String orderNo = generateOrderNo();
 
         InboundOrder order = InboundOrder.builder()
@@ -63,7 +89,8 @@ public class InventoryService {
                 .supplierName(request.getSupplierName())
                 .status("COMPLETED")
                 .build();
-        order = inboundOrderRepository.save(order);
+        // saveAndFlush：立即 flush，让单号唯一约束冲突在此抛出（DataIntegrityViolationException），交给 withOrderNoRetry 重试
+        order = inboundOrderRepository.saveAndFlush(order);
 
         List<InboundItemResponse> itemResponses = new ArrayList<>();
         for (InboundOrderCreateRequest.InboundItemRequest item : request.getItems()) {
@@ -113,7 +140,7 @@ public class InventoryService {
 
     /**
      * 生成入库单号：IN-YYYYMMDD-XXX（XXX 为当天递增序号）
-     * 注意：count+1 在极端并发下可能产生重复单号，生产环境可依赖唯一索引 + 重试或 DB sequence 兜底
+     * 注意：count+1 本身非原子，并发撞唯一约束时由 withOrderNoRetry 整体重试
      */
     private String generateOrderNo() {
         String prefix = "IN-" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
@@ -134,10 +161,13 @@ public class InventoryService {
     /**
      * 出库单创建 + 库存扣减（选做 A）
      * 并发安全方案：悲观锁（SELECT ... FOR UPDATE）在事务内锁定库存行，
-     * 锁内校验库存充足再扣减，防止高并发超卖。
+     * 锁内校验库存充足再扣减，防止高并发超卖；单号冲突时自动重试。
      */
-    @Transactional
     public OutboundOrderCreateResponse createOutboundOrder(OutboundOrderCreateRequest request) {
+        return withOrderNoRetry("创建出库单", () -> doCreateOutboundOrder(request));
+    }
+
+    private OutboundOrderCreateResponse doCreateOutboundOrder(OutboundOrderCreateRequest request) {
         String orderNo = generateOutboundOrderNo();
 
         OutboundOrder order = OutboundOrder.builder()
@@ -145,7 +175,8 @@ public class InventoryService {
                 .customerName(request.getCustomerName())
                 .status("COMPLETED")
                 .build();
-        order = outboundOrderRepository.save(order);
+        // saveAndFlush：立即 flush，让单号唯一约束冲突在此抛出，交给 withOrderNoRetry 重试
+        order = outboundOrderRepository.saveAndFlush(order);
 
         List<OutboundItemResponse> itemResponses = new ArrayList<>();
         for (OutboundOrderCreateRequest.OutboundItemRequest item : request.getItems()) {
