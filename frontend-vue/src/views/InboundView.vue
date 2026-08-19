@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
   createInboundOrder,
@@ -104,6 +104,8 @@ onMounted(async () => {
   products.value = (await getProducts()).data
   items.value = [newRow()]
 })
+
+onUnmounted(() => clearTimeout(productTimer))
 </script>
 
 <template>

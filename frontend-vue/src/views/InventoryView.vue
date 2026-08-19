@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { getInventory, getWarehouses, type Warehouse, type InventoryItem } from '@/api'
 import { isLowStock } from '@/utils/inventory'
 
@@ -66,6 +66,8 @@ onMounted(async () => {
   warehouses.value = (await getWarehouses()).data
   loadInventory()
 })
+
+onUnmounted(() => clearTimeout(timer))
 </script>
 
 <template>
