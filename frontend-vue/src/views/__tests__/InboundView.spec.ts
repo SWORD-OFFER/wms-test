@@ -77,7 +77,7 @@ describe('InboundView 入库单表单', () => {
     await flushPromises()
 
     await wrapper.find('input[placeholder="请输入供应商名称"]').setValue('SupplierA')
-    vm(wrapper).items = [{ productId: 1, warehouseId: 1, locationCode: 'WH-A-01-01', quantity: 5, locations: [] }]
+    vm(wrapper).items = [{ id: 1, productId: 1, warehouseId: 1, locationCode: 'WH-A-01-01', quantity: 5, locations: [] }]
 
     const submitBtn = wrapper.findAll('button').find((b) => b.text().includes('提交入库单'))!
     await submitBtn.trigger('click')

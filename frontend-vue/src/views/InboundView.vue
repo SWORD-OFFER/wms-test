@@ -12,6 +12,7 @@ import {
 } from '@/api'
 
 interface InboundRow {
+  id: number
   productId?: number
   warehouseId?: number
   locationCode: string
@@ -25,7 +26,9 @@ const products = ref<Product[]>([])
 const warehouses = ref<Warehouse[]>([])
 const items = ref<InboundRow[]>([])
 
+let nextRowId = 1
 const newRow = (): InboundRow => ({
+  id: nextRowId++,
   productId: undefined,
   warehouseId: undefined,
   locationCode: '',
@@ -116,7 +119,7 @@ onMounted(async () => {
         <el-button type="primary" @click="addItem">+ 添加明细</el-button>
       </el-form-item>
 
-      <div v-for="(item, index) in items" :key="index" class="row">
+      <div v-for="(item, index) in items" :key="item.id" class="row">
         <el-select
           v-model="item.productId"
           placeholder="选择商品"

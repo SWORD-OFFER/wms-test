@@ -73,7 +73,7 @@ export const getInventory = (params: {
   )
 
 
-// ============ 入库单（候选人实现） ============
+// ============ 入库单 ============
 
 export interface InboundItemRequest {
   productId: number
@@ -81,11 +81,19 @@ export interface InboundItemRequest {
   locationCode: string
 }
 
+export interface InboundOrderResponse {
+  id: number
+  orderNo: string
+  supplierName: string
+  status: string
+  createdAt: string
+}
+
 export const createInboundOrder = (data: {
   supplierName: string
   items: InboundItemRequest[]
 }) =>
-  api.post('/inbound-orders', data)
+  api.post<any, { code: number; message: string; data: InboundOrderResponse }>('/inbound-orders', data)
 
 
 // ============ 出库单（选做 A） ============
@@ -96,8 +104,16 @@ export interface OutboundItemRequest {
   locationCode: string
 }
 
+export interface OutboundOrderResponse {
+  id: number
+  orderNo: string
+  customerName: string
+  status: string
+  createdAt: string
+}
+
 export const createOutboundOrder = (data: {
   customerName: string
   items: OutboundItemRequest[]
 }) =>
-  api.post('/outbound-orders', data)
+  api.post<any, { code: number; message: string; data: OutboundOrderResponse }>('/outbound-orders', data)
