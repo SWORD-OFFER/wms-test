@@ -1,5 +1,7 @@
 package com.wms.service;
 
+import com.wms.dto.LocationResponse;
+import com.wms.dto.WarehouseResponse;
 import com.wms.entity.Location;
 import com.wms.entity.Warehouse;
 import com.wms.repository.LocationRepository;
@@ -16,11 +18,28 @@ public class WarehouseService {
     private final WarehouseRepository warehouseRepository;
     private final LocationRepository locationRepository;
 
-    public List<Warehouse> listAll() {
-        return warehouseRepository.findAll();
+    public List<WarehouseResponse> listAll() {
+        return warehouseRepository.findAll().stream()
+                .map(w -> WarehouseResponse.builder()
+                        .id(w.getId())
+                        .code(w.getCode())
+                        .name(w.getName())
+                        .build())
+                .toList();
     }
 
-    public List<Location> getLocationsByWarehouse(Long warehouseId) {
-        return locationRepository.findByWarehouseId(warehouseId);
+    public List<LocationResponse> getLocationsByWarehouse(Long warehouseId) {
+        return locationRepository.findByWarehouseId(warehouseId).stream()
+                .map(this::toLocationResponse)
+                .toList();
+    }
+
+    private LocationResponse toLocationResponse(Location location) {
+        return LocationResponse.builder()
+                .id(location.getId())
+                .warehouseId(location.getWarehouseId())
+                .code(location.getCode())
+                .status(location.getStatus())
+                .build();
     }
 }

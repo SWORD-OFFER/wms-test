@@ -14,7 +14,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException e) {
         log.warn("业务异常: {}", e.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        // HTTP 状态码与业务码对齐（如商品不存在 code=404 → HTTP 404），未知码回退 400
+        HttpStatus status = HttpStatus.resolve(e.getCode());
+        return ResponseEntity.status(status != null ? status : HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(e.getCode(), e.getMessage()));
     }
 
