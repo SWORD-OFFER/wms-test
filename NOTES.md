@@ -39,6 +39,7 @@
 1. **前端代理端口指向 FastAPI**:模板 `vite.config.ts` 的 `/api` 代理指向 `http://localhost:8000`(Python 后端),而我选的是 Java 后端(8080),导致前端调不到后端。改为 8080。
 2. **模板 DTO 内部类不可用**:`InboundOrderCreateRequest` 的明细类是包级私有非 static 内部类,Service 在别的包访问不到,且 Jackson 反序列化非静态内部类会报错。改为 `public static` 嵌套类。
 3. **H2 内存库**:重启后端数据重置,靠 `DataInitializer` 自动重建示例数据,便于演示。
+4. **订单单号并发冲突**:并发测试发现 `count+1` 生成单号在真并发下会撞唯一约束,导致请求失败(500)。修复:用 `saveAndFlush` 让冲突在保存时立即抛出,`withOrderNoRetry` 捕获后**自动重试取下一个序号**(新事务重新计数)。同时将 H2 锁超时从 1s 提到 10s。新增 `OrderNumberConcurrencyTest` 用"不同库存行、只竞争单号"的方式验证:10 并发全成功、0 冲突。
 
 ## 6. 如果更多时间,我还会做
 
@@ -64,4 +65,10 @@ feat(frontend): 实现出库单创建表单
 feat(backend): 实现出库单与悲观锁库存扣减（选做A）
 test(backend): 入库单创建 service 单元测试
 test(frontend): 库存筛选逻辑单元测试
+test(frontend): 补充入库/库存页组件测试
+fix(frontend): 删除商品失败时展示后端错误
+test(frontend): 新增 Playwright 端到端测试
+test(backend): 出库并发扣减测试
+fix(backend): 单号并发冲突自动重试（saveAndFlush + withOrderNoRetry）
+test(backend): 单号并发测试（隔离验证重试）
 ```
