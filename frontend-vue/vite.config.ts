@@ -21,5 +21,7 @@ export default defineConfig({
   },
   test: {
     environment: 'happy-dom',
+    // e2e 目录由 Playwright 运行，排除出 Vitest
+    exclude: ['e2e/**', 'node_modules/**', 'dist/**'],
   },
 })
