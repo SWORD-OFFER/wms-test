@@ -73,9 +73,10 @@ public class InboundOrderService {
                     .locationCode(item.getLocationCode())
                     .build());
 
-            // 库存累加（存在则累加，不存在则新建，表唯一约束 uk_product_location 兜底）
+            // 库存累加：已存在行用悲观锁串行累加（与出库一致，避免并发丢更新）；
+            // 首次创建时 findForUpdate 不返回行，靠表唯一约束 uk_product_location + orderNumberService 重试收敛
             Inventory inventory = inventoryRepository
-                    .findByProductIdAndLocationCode(item.getProductId(), item.getLocationCode())
+                    .findForUpdate(item.getProductId(), item.getLocationCode())
                     .orElseGet(() -> Inventory.builder()
                             .productId(item.getProductId())
                             .locationCode(item.getLocationCode())
