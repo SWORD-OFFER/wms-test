@@ -5,6 +5,8 @@ import com.wms.dto.ProductCreateRequest;
 import com.wms.dto.ProductResponse;
 import com.wms.dto.ProductUpdateRequest;
 import com.wms.service.ProductService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +16,7 @@ import java.util.List;
 /**
  * 商品管理 Controller — 参考实现
  */
+@Tag(name = "商品管理", description = "商品 CRUD 接口")
 @RestController
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
@@ -21,28 +24,33 @@ public class ProductController {
 
     private final ProductService productService;
 
+    @Operation(summary = "商品列表", description = "支持商品名称/SKU 模糊搜索")
     @GetMapping
     public ApiResponse<List<ProductResponse>> list(
             @RequestParam(required = false) String keyword) {
         return ApiResponse.success(productService.list(keyword));
     }
 
+    @Operation(summary = "商品详情")
     @GetMapping("/{id}")
     public ApiResponse<ProductResponse> getById(@PathVariable Long id) {
         return ApiResponse.success(productService.getById(id));
     }
 
+    @Operation(summary = "新增商品")
     @PostMapping
     public ApiResponse<ProductResponse> create(@Valid @RequestBody ProductCreateRequest request) {
         return ApiResponse.success(productService.create(request));
     }
 
+    @Operation(summary = "更新商品")
     @PutMapping("/{id}")
     public ApiResponse<ProductResponse> update(@PathVariable Long id,
                                                 @Valid @RequestBody ProductUpdateRequest request) {
         return ApiResponse.success(productService.update(id, request));
     }
 
+    @Operation(summary = "删除商品", description = "有关联库存时拒绝删除")
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable Long id) {
         productService.delete(id);
