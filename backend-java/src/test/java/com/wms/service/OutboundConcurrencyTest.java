@@ -18,9 +18,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * 出库并发扣减测试（选做 A）：验证悲观锁 SELECT FOR UPDATE 防止超卖
- * 断言核心不变量：并发下库存绝不为负、扣减总量不超过初始库存
- * 说明：单号按 count+1 生成，极端并发下可能重复导致部分请求失败，
- *      这是已知的独立并发问题（生产用唯一索引+重试或 DB sequence 兜底），不影响本测试的不变量。
+ * 断言核心不变量：并发下库存绝不为负、扣减总量不超过初始库存。
+ * （单号并发由 OrderNumberConcurrencyTest 单独验证）
  */
 @SpringBootTest
 class OutboundConcurrencyTest {
@@ -56,7 +55,6 @@ class OutboundConcurrencyTest {
         final int perThread = 10; // 总需求 100 > 50，必然触发库存不足
         ExecutorService pool = Executors.newFixedThreadPool(threads);
         AtomicInteger success = new AtomicInteger();
-        AtomicInteger insufficient = new AtomicInteger();
 
         for (int i = 0; i < threads; i++) {
             pool.submit(() -> {
@@ -64,11 +62,9 @@ class OutboundConcurrencyTest {
                     inventoryService.createOutboundOrder(buildRequest(4L, perThread, "WH-A-02-01"));
                     success.incrementAndGet();
                 } catch (BusinessException e) {
-                    if (e.getMessage().contains("库存不足")) {
-                        insufficient.incrementAndGet();
-                    }
+                    // 库存不足是预期业务结果
                 } catch (Exception ignored) {
-                    // 单号唯一冲突等并发附属问题，不计入成功
+                    // 并发下的连接层瞬态异常不改变库存不变量，忽略
                 }
             });
         }
@@ -81,6 +77,5 @@ class OutboundConcurrencyTest {
         // 核心不变量：库存绝不为负（未超卖）；扣减总量不超过初始库存
         assertTrue(after >= 0, "并发扣减后库存不得为负（未超卖）");
         assertTrue(success.get() * perThread <= initial, "扣减总量不得超过初始库存");
-        assertTrue(success.get() + insufficient.get() <= threads, "成功与库存不足之和不应超过总请求数");
     }
 }
