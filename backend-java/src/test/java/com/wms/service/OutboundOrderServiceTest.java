@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class OutboundOrderServiceTest {
 
     @Autowired
-    private InventoryService inventoryService;
+    private OutboundOrderService outboundOrderService;
 
     @Autowired
     private InventoryRepository inventoryRepository;
@@ -41,7 +41,7 @@ class OutboundOrderServiceTest {
     void createOutboundOrder_正常扣减_单号合规() {
         int before = inventoryRepository.findByProductIdAndLocationCode(2L, "WH-A-01-01").orElseThrow().getQuantity();
 
-        OutboundOrderCreateResponse response = inventoryService.createOutboundOrder(buildRequest(2L, 10, "WH-A-01-01"));
+        OutboundOrderCreateResponse response = outboundOrderService.createOutboundOrder(buildRequest(2L, 10, "WH-A-01-01"));
 
         assertEquals("COMPLETED", response.getStatus());
         assertTrue(response.getOrderNo().matches("OUT-\\d{8}-\\d{3}"));
@@ -54,7 +54,7 @@ class OutboundOrderServiceTest {
         int before = inventoryRepository.findByProductIdAndLocationCode(3L, "WH-A-01-02").orElseThrow().getQuantity();
 
         assertThrows(BusinessException.class,
-                () -> inventoryService.createOutboundOrder(buildRequest(3L, 9999, "WH-A-01-02")));
+                () -> outboundOrderService.createOutboundOrder(buildRequest(3L, 9999, "WH-A-01-02")));
 
         int after = inventoryRepository.findByProductIdAndLocationCode(3L, "WH-A-01-02").orElseThrow().getQuantity();
         assertEquals(before, after, "库存不足时事务应回滚，库存不变");
@@ -63,6 +63,6 @@ class OutboundOrderServiceTest {
     @Test
     void createOutboundOrder_库存记录不存在_抛异常() {
         assertThrows(BusinessException.class,
-                () -> inventoryService.createOutboundOrder(buildRequest(5L, 1, "WH-A-01-01")));
+                () -> outboundOrderService.createOutboundOrder(buildRequest(5L, 1, "WH-A-01-01")));
     }
 }

@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class OutboundConcurrencyTest {
 
     @Autowired
-    private InventoryService inventoryService;
+    private OutboundOrderService outboundOrderService;
 
     @Autowired
     private InventoryRepository inventoryRepository;
@@ -59,7 +59,7 @@ class OutboundConcurrencyTest {
         for (int i = 0; i < threads; i++) {
             pool.submit(() -> {
                 try {
-                    inventoryService.createOutboundOrder(buildRequest(4L, perThread, "WH-A-02-01"));
+                    outboundOrderService.createOutboundOrder(buildRequest(4L, perThread, "WH-A-02-01"));
                     success.incrementAndGet();
                 } catch (BusinessException e) {
                     // 库存不足是预期业务结果

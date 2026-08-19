@@ -20,10 +20,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * 覆盖：正常累加 + 单号格式 + 事务回滚
  */
 @SpringBootTest
-class InventoryServiceTest {
+class InboundOrderServiceTest {
 
     @Autowired
-    private InventoryService inventoryService;
+    private InboundOrderService inboundOrderService;
 
     @Autowired
     private InventoryRepository inventoryRepository;
@@ -42,7 +42,7 @@ class InventoryServiceTest {
     @Test
     void createInboundOrder_正常入库_库存累加且单号合规() {
         // product 5（屏幕保护膜）在种子数据中无库存，结果确定
-        InboundOrderCreateResponse response = inventoryService.createInboundOrder(
+        InboundOrderCreateResponse response = inboundOrderService.createInboundOrder(
                 buildRequest(5L, 7, "WH-B-01-01"));
 
         assertEquals("COMPLETED", response.getStatus());
@@ -71,7 +71,7 @@ class InventoryServiceTest {
         bad.setLocationCode("WH-XX-99");
         request.setItems(List.of(ok, bad));
 
-        assertThrows(BusinessException.class, () -> inventoryService.createInboundOrder(request));
+        assertThrows(BusinessException.class, () -> inboundOrderService.createInboundOrder(request));
 
         Inventory after = inventoryRepository.findByProductIdAndLocationCode(3L, "WH-A-01-02").orElseThrow();
         assertEquals(qtyBefore, after.getQuantity(), "事务回滚后第一行已累加的库存不应保留");
@@ -80,6 +80,6 @@ class InventoryServiceTest {
     @Test
     void createInboundOrder_商品不存在_抛业务异常() {
         assertThrows(BusinessException.class,
-                () -> inventoryService.createInboundOrder(buildRequest(999L, 1, "WH-A-01-01")));
+                () -> inboundOrderService.createInboundOrder(buildRequest(999L, 1, "WH-A-01-01")));
     }
 }

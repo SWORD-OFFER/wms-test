@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class OrderNumberConcurrencyTest {
 
     @Autowired
-    private InventoryService inventoryService;
+    private OutboundOrderService outboundOrderService;
 
     @Autowired
     private InventoryRepository inventoryRepository;
@@ -63,7 +63,7 @@ class OrderNumberConcurrencyTest {
                 item.setLocationCode("TEST-LOC-" + idx);
                 request.setItems(List.of(item));
                 try {
-                    inventoryService.createOutboundOrder(request);
+                    outboundOrderService.createOutboundOrder(request);
                     success.incrementAndGet();
                 } catch (BusinessException e) {
                     if (e.getMessage().contains("单号冲突")) {
