@@ -1,6 +1,7 @@
 package com.wms.controller;
 
 import com.wms.common.ApiResponse;
+import com.wms.common.PageResult;
 import com.wms.dto.ProductCreateRequest;
 import com.wms.dto.ProductResponse;
 import com.wms.dto.ProductUpdateRequest;
@@ -8,15 +9,16 @@ import com.wms.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 /**
  * 商品管理 Controller — 参考实现
  */
 @Tag(name = "商品管理", description = "商品 CRUD 接口")
+@Validated
 @RestController
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
@@ -24,11 +26,13 @@ public class ProductController {
 
     private final ProductService productService;
 
-    @Operation(summary = "商品列表", description = "支持商品名称/SKU 模糊搜索")
+    @Operation(summary = "商品列表", description = "按 keyword 模糊搜索 + 分页")
     @GetMapping
-    public ApiResponse<List<ProductResponse>> list(
-            @RequestParam(required = false) String keyword) {
-        return ApiResponse.success(productService.list(keyword));
+    public ApiResponse<PageResult<ProductResponse>> list(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") @Max(100) int pageSize) {
+        return ApiResponse.success(productService.list(keyword, page, pageSize));
     }
 
     @Operation(summary = "商品详情")

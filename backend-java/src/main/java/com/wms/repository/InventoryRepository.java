@@ -40,14 +40,17 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
             "JOIN Location l ON l.code = i.locationCode " +
             "JOIN Warehouse w ON w.id = l.warehouseId " +
             "WHERE (:keyword IS NULL OR p.name LIKE %:keyword% OR p.sku LIKE %:keyword%) " +
-            "AND (:warehouseId IS NULL OR l.warehouseId = :warehouseId)",
+            "AND (:warehouseId IS NULL OR l.warehouseId = :warehouseId) " +
+            "AND (:locationCode IS NULL OR i.locationCode = :locationCode)",
             countQuery = "SELECT COUNT(i) FROM Inventory i " +
                     "JOIN Product p ON p.id = i.productId " +
                     "JOIN Location l ON l.code = i.locationCode " +
                     "JOIN Warehouse w ON w.id = l.warehouseId " +
                     "WHERE (:keyword IS NULL OR p.name LIKE %:keyword% OR p.sku LIKE %:keyword%) " +
-                    "AND (:warehouseId IS NULL OR l.warehouseId = :warehouseId)")
+                    "AND (:warehouseId IS NULL OR l.warehouseId = :warehouseId) " +
+                    "AND (:locationCode IS NULL OR i.locationCode = :locationCode)")
     Page<InventoryResponse> queryInventory(@Param("keyword") String keyword,
                                            @Param("warehouseId") Long warehouseId,
+                                           @Param("locationCode") String locationCode,
                                            Pageable pageable);
 }

@@ -1,9 +1,12 @@
 package com.wms.service;
 
 import com.wms.common.BusinessException;
+import com.wms.common.PageResult;
 import com.wms.dto.InboundOrderCreateRequest;
 import com.wms.dto.InboundOrderCreateResponse;
 import com.wms.dto.InboundOrderCreateResponse.InboundItemResponse;
+import com.wms.dto.InboundOrderDetailResponse;
+import com.wms.dto.InboundOrderListResponse;
 import com.wms.entity.InboundOrder;
 import com.wms.entity.InboundOrderItem;
 import com.wms.entity.Inventory;
@@ -15,6 +18,8 @@ import com.wms.repository.LocationRepository;
 import com.wms.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -100,6 +105,50 @@ public class InboundOrderService {
                 .supplierName(order.getSupplierName())
                 .status(order.getStatus())
                 .items(itemResponses)
+                .createdAt(order.getCreatedAt())
+                .build();
+    }
+
+    /**
+     * 入库单列表（API_SPEC 3.2）
+     */
+    public PageResult<InboundOrderListResponse> list(int page, int pageSize) {
+        Page<InboundOrder> orders = inboundOrderRepository.findAll(PageRequest.of(page - 1, pageSize));
+        List<InboundOrderListResponse> list = orders.getContent().stream()
+                .map(o -> InboundOrderListResponse.builder()
+                        .id(o.getId())
+                        .orderNo(o.getOrderNo())
+                        .supplierName(o.getSupplierName())
+                        .status(o.getStatus())
+                        .createdAt(o.getCreatedAt())
+                        .build())
+                .toList();
+        return new PageResult<>(list, orders.getTotalElements(), page, pageSize);
+    }
+
+    /**
+     * 入库单详情（API_SPEC 3.3）
+     */
+    public InboundOrderDetailResponse getById(Long id) {
+        InboundOrder order = inboundOrderRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(404, "入库单不存在: id=" + id));
+        List<InboundOrderDetailResponse.Item> items = inboundOrderItemRepository.findByOrderId(order.getId())
+                .stream()
+                .map(item -> InboundOrderDetailResponse.Item.builder()
+                        .productId(item.getProductId())
+                        .productName(productRepository.findById(item.getProductId())
+                                .map(Product::getName)
+                                .orElse(null))
+                        .quantity(item.getQuantity())
+                        .locationCode(item.getLocationCode())
+                        .build())
+                .toList();
+        return InboundOrderDetailResponse.builder()
+                .id(order.getId())
+                .orderNo(order.getOrderNo())
+                .supplierName(order.getSupplierName())
+                .status(order.getStatus())
+                .items(items)
                 .createdAt(order.getCreatedAt())
                 .build();
     }

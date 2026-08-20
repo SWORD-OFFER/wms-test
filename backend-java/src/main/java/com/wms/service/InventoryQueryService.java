@@ -18,12 +18,12 @@ public class InventoryQueryService {
     private final InventoryRepository inventoryRepository;
 
     /**
-     * 库存查询：按商品名/SKU 模糊搜索 + 仓库筛选 + 分页
+     * 库存查询：按商品名/SKU 模糊搜索 + 仓库筛选 + 库位编码筛选 + 分页
      */
-    public PageResult<InventoryResponse> queryInventory(String keyword, Long warehouseId,
+    public PageResult<InventoryResponse> queryInventory(String keyword, Long warehouseId, String locationCode,
                                                         int page, int pageSize) {
         PageRequest pageRequest = PageRequest.of(page - 1, pageSize);
-        Page<InventoryResponse> result = inventoryRepository.queryInventory(keyword, warehouseId, pageRequest);
+        Page<InventoryResponse> result = inventoryRepository.queryInventory(keyword, warehouseId, locationCode, pageRequest);
         return new PageResult<>(result.getContent(), result.getTotalElements(), page, pageSize);
     }
 }
