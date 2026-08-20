@@ -43,4 +43,14 @@ class ProductServiceTest {
         productService.delete(p.getId());
         assertFalse(productRepository.existsById(p.getId()), "无关联库存的商品应删除成功");
     }
+
+    @Test
+    @DisplayName("商品列表：支持分页且总数正确")
+    void shouldListWithPagination() {
+        var page = productService.list(null, 1, 5);
+        assertTrue(page.getTotal() >= 5);
+        assertTrue(page.getList().size() <= 5);
+        assertEquals(1, page.getPage());
+        assertEquals(5, page.getPageSize());
+    }
 }

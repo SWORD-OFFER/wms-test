@@ -1,9 +1,12 @@
 package com.wms.service;
 
 import com.wms.common.BusinessException;
+import com.wms.common.PageResult;
 import com.wms.dto.InboundOrderCreateRequest;
 import com.wms.dto.InboundOrderCreateRequest.InboundItemRequest;
 import com.wms.dto.InboundOrderCreateResponse;
+import com.wms.dto.InboundOrderDetailResponse;
+import com.wms.dto.InboundOrderListResponse;
 import com.wms.entity.Inventory;
 import com.wms.repository.InventoryRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -17,8 +20,8 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * 入库单创建 Service 层单元测试（选做 B）
- * 覆盖：正常累加 + 单号格式 + 事务回滚
+ * 入库单 Service 层单元测试（选做 B）
+ * 覆盖：创建/累加/单号/回滚 + 列表/详情
  */
 @SpringBootTest
 class InboundOrderServiceTest {
@@ -43,7 +46,10 @@ class InboundOrderServiceTest {
     @Test
     @DisplayName("正常入库：库存累加且单号合规")
     void shouldIncrementStockAndGenerateValidOrderNo() {
-        // product 5（屏幕保护膜）在种子数据中无库存，结果确定
+        // 快照式断言，与用例执行顺序无关（其他用例也可能累加同一库位）
+        int before = inventoryRepository.findByProductIdAndLocationCode(5L, "WH-B-01-01")
+                .map(Inventory::getQuantity).orElse(0);
+
         InboundOrderCreateResponse response = inboundOrderService.createInboundOrder(
                 buildRequest(5L, 7, "WH-B-01-01"));
 
@@ -52,7 +58,7 @@ class InboundOrderServiceTest {
 
         Optional<Inventory> inv = inventoryRepository.findByProductIdAndLocationCode(5L, "WH-B-01-01");
         assertTrue(inv.isPresent());
-        assertEquals(7, inv.get().getQuantity());
+        assertEquals(before + 7, inv.get().getQuantity());
     }
 
     @Test
@@ -85,5 +91,39 @@ class InboundOrderServiceTest {
     void shouldThrowWhenProductNotExist() {
         assertThrows(BusinessException.class,
                 () -> inboundOrderService.createInboundOrder(buildRequest(999L, 1, "WH-A-01-01")));
+    }
+
+    @Test
+    @DisplayName("入库单列表：包含刚创建的订单")
+    void shouldListCreatedOrders() {
+        InboundOrderCreateResponse created = inboundOrderService.createInboundOrder(
+                buildRequest(5L, 3, "WH-B-01-01"));
+
+        PageResult<InboundOrderListResponse> page = inboundOrderService.list(1, 20);
+        assertTrue(page.getTotal() >= 1);
+        assertTrue(page.getList().stream().anyMatch(o -> o.getOrderNo().equals(created.getOrderNo())));
+        assertEquals("COMPLETED", page.getList().stream()
+                .filter(o -> o.getOrderNo().equals(created.getOrderNo()))
+                .findFirst().orElseThrow().getStatus());
+    }
+
+    @Test
+    @DisplayName("入库单详情：含明细与商品名")
+    void shouldGetDetailWithItems() {
+        InboundOrderCreateResponse created = inboundOrderService.createInboundOrder(
+                buildRequest(5L, 9, "WH-B-01-01"));
+
+        InboundOrderDetailResponse detail = inboundOrderService.getById(created.getId());
+        assertEquals(created.getOrderNo(), detail.getOrderNo());
+        assertEquals(1, detail.getItems().size());
+        assertEquals("屏幕保护膜", detail.getItems().get(0).getProductName());
+        assertEquals(9, detail.getItems().get(0).getQuantity());
+    }
+
+    @Test
+    @DisplayName("入库单详情：不存在抛 404")
+    void shouldThrow404WhenOrderNotExist() {
+        BusinessException e = assertThrows(BusinessException.class, () -> inboundOrderService.getById(99999L));
+        assertEquals(404, e.getCode());
     }
 }
