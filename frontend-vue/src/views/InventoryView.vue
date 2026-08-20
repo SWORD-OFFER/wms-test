@@ -4,6 +4,7 @@ import { getInventory, getWarehouses, type Warehouse, type InventoryItem } from 
 import { isLowStock } from '@/utils/inventory'
 
 const keyword = ref('')
+const locationCode = ref('')
 const warehouseId = ref<number | undefined>()
 const loading = ref(false)
 const inventoryList = ref<InventoryItem[]>([])
@@ -18,6 +19,7 @@ const loadInventory = async () => {
     const res = await getInventory({
       keyword: keyword.value || undefined,
       warehouseId: warehouseId.value,
+      locationCode: locationCode.value || undefined,
       page: page.value,
       pageSize: pageSize.value,
     })
@@ -93,6 +95,14 @@ onUnmounted(() => clearTimeout(timer))
       >
         <el-option v-for="w in warehouses" :key="w.id" :label="w.name" :value="w.id" />
       </el-select>
+      <el-input
+        v-model="locationCode"
+        placeholder="库位编码(如 WH-A-01-01)"
+        style="width: 200px"
+        clearable
+        @keyup.enter="onSearch"
+        @clear="onSearch"
+      />
       <el-button type="primary" @click="onSearch">查询</el-button>
     </div>
 

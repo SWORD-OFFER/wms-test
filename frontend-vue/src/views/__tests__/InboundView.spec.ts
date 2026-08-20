@@ -30,7 +30,7 @@ const vm = (wrapper: ReturnType<typeof mountView>) => wrapper.vm as any
 describe('InboundView 入库单表单', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    api.getProducts.mockResolvedValue({ data: products })
+    api.getProducts.mockResolvedValue({ data: { list: products, total: products.length, page: 1, pageSize: 20 } })
     api.getWarehouses.mockResolvedValue({ data: warehouses })
     api.getLocations.mockResolvedValue({ data: locations })
   })

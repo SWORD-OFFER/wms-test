@@ -11,12 +11,13 @@
  * ️ BUG 预埋点：编辑后返回列表时页码会重置为第1页
  *   候选人需要在任务3中修复此问题
  */
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getProducts, createProduct, updateProduct, deleteProduct, type Product } from '@/api'
 
 const products = ref<Product[]>([])
 const keyword = ref('')
+const total = ref(0)
 const loading = ref(false)
 const dialogVisible = ref(false)
 const dialogTitle = ref('新增商品')
@@ -24,12 +25,17 @@ const form = ref({ id: 0, name: '', sku: '', unit: '个' })
 const currentPage = ref(1)
 const pageSize = ref(10)
 
-// 搜索
+// 后端分页加载
 const loadProducts = async () => {
   loading.value = true
   try {
-    const res = await getProducts(keyword.value || undefined)
-    products.value = res.data
+    const res = await getProducts({
+      keyword: keyword.value || undefined,
+      page: currentPage.value,
+      pageSize: pageSize.value,
+    })
+    products.value = res.data.list
+    total.value = res.data.total
   } catch (e: any) {
     ElMessage.error('加载失败: ' + (e.response?.data?.message || e.message))
   } finally {
@@ -37,11 +43,11 @@ const loadProducts = async () => {
   }
 }
 
-// 分页后的数据
-const pagedProducts = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  return products.value.slice(start, start + pageSize.value)
-})
+// 搜索时回到第 1 页
+const onSearch = () => {
+  currentPage.value = 1
+  loadProducts()
+}
 
 onMounted(loadProducts)
 
@@ -100,13 +106,13 @@ const handleDelete = async (id: number) => {
     <!-- 搜索栏 -->
     <div style="display: flex; gap: 12px; margin-bottom: 16px">
       <el-input v-model="keyword" placeholder="搜索商品名称/SKU..." style="width: 300px" clearable
-        @keyup.enter="loadProducts" @clear="loadProducts" />
-      <el-button type="primary" @click="loadProducts">搜索</el-button>
+        @keyup.enter="onSearch" @clear="onSearch" />
+      <el-button type="primary" @click="onSearch">搜索</el-button>
       <el-button type="success" @click="handleAdd">新增商品</el-button>
     </div>
 
     <!-- 表格 -->
-    <el-table :data="pagedProducts" v-loading="loading" border stripe>
+    <el-table :data="products" v-loading="loading" border stripe>
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column prop="name" label="商品名称" />
       <el-table-column prop="sku" label="SKU" width="150" />
@@ -119,13 +125,14 @@ const handleDelete = async (id: number) => {
       </el-table-column>
     </el-table>
 
-    <!-- 分页 -->
+    <!-- 分页（后端分页） -->
     <div style="margin-top: 16px; text-align: right">
       <el-pagination
         v-model:current-page="currentPage"
         :page-size="pageSize"
-        :total="products.length"
+        :total="total"
         layout="total, prev, pager, next"
+        @current-change="loadProducts"
       />
     </div>
 

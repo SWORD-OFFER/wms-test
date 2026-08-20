@@ -48,8 +48,8 @@ let productTimer: ReturnType<typeof setTimeout> | undefined
 const searchProducts = (query: string) => {
   clearTimeout(productTimer)
   productTimer = setTimeout(async () => {
-    const res = await getProducts(query || undefined)
-    products.value = res.data
+    const res = await getProducts({ keyword: query || undefined })
+    products.value = res.data.list
   }, 200)
 }
 
@@ -99,7 +99,7 @@ const handleSubmit = async () => {
 
 onMounted(async () => {
   warehouses.value = (await getWarehouses()).data
-  products.value = (await getProducts()).data
+  products.value = (await getProducts()).data.list
   items.value = [newRow()]
 })
 
