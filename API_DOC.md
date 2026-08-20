@@ -44,18 +44,23 @@
 ## 1. 商品管理 `/api/products`
 
 ### 1.1 商品列表
-`GET /api/products?keyword=`
+`GET /api/products?keyword=&page=&pageSize=`
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| keyword | string | 否 | 商品名称/SKU 模糊搜索 |
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+|------|------|------|------|------|
+| keyword | string | 否 | - | 商品名称/SKU 模糊搜索 |
+| page | int | 否 | 1 | 页码 |
+| pageSize | int | 否 | 10 | 每页条数，最大 100 |
 
 ```json
 // 响应 data
-[
-  { "id": 1, "name": "蓝牙耳机 Pro", "sku": "SKU-001", "unit": "个",
-    "createdAt": "2026-08-19T02:21:56.755039", "updatedAt": "2026-08-19T02:21:56.755039" }
-]
+{
+  "list": [
+    { "id": 1, "name": "蓝牙耳机 Pro", "sku": "SKU-001", "unit": "个",
+      "createdAt": "2026-08-19T02:21:56.755039", "updatedAt": "2026-08-19T02:21:56.755039" }
+  ],
+  "total": 50, "page": 1, "pageSize": 10
+}
 ```
 
 ### 1.2 商品详情
@@ -147,19 +152,47 @@
 
 **错误**:商品不存在 `404`;库位不存在 `400 "库位不存在: XXX"`。
 
+### 3.2 入库单列表
+`GET /api/inbound-orders?page=1&pageSize=20`
+
+| 参数 | 类型 | 必填 | 默认 | 说明 |
+|------|------|------|------|------|
+| page | int | 否 | 1 | 页码 |
+| pageSize | int | 否 | 20 | 每页条数，最大 100 |
+
+```json
+// 响应 data
+{ "list": [ { "id": 1, "orderNo": "IN-20260819-001", "supplierName": "供应商A",
+              "status": "COMPLETED", "createdAt": "2026-08-19T10:00:00" } ],
+  "total": 1, "page": 1, "pageSize": 20 }
+```
+
+### 3.3 入库单详情
+`GET /api/inbound-orders/{id}`
+
+```json
+// 响应 data
+{ "id": 1, "orderNo": "IN-20260819-001", "supplierName": "供应商A", "status": "COMPLETED",
+  "items": [ { "productId": 1, "productName": "蓝牙耳机 Pro", "quantity": 100, "locationCode": "WH-A-01-01" } ],
+  "createdAt": "2026-08-19T10:00:00" }
+```
+
+- 订单不存在 → `404 "入库单不存在: id=X"`
+
 ---
 
 ## 4. 库存查询 `/api/inventory`
 
 ### 4.1 查询库存
-`GET /api/inventory?keyword=&warehouseId=&page=&pageSize=`
+`GET /api/inventory?keyword=&warehouseId=&locationCode=&page=&pageSize=`
 
 | 参数 | 类型 | 必填 | 默认 | 说明 |
 |------|------|------|------|------|
 | keyword | string | 否 | - | 商品名称/SKU 模糊搜索 |
 | warehouseId | long | 否 | - | 仓库 ID 筛选 |
+| locationCode | string | 否 | - | 库位编码精确筛选 |
 | page | int | 否 | 1 | 页码 |
-| pageSize | int | 否 | 20 | 每页条数 |
+| pageSize | int | 否 | 20 | 每页条数，最大 100 |
 
 ```json
 // 响应 data
